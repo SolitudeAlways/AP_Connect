@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from './user/user.module';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: 'config.env' });
@@ -18,6 +19,7 @@ console.log('POSTGRES_PASSWORD:', JSON.stringify(process.env.POSTGRES_PASSWORD))
       synchronize: true, // на проде лучше отключить и миграции использовать
       autoLoadEntities: true,
     }),
+    UserModule,
   ],
 })
 export class AppModule {}
