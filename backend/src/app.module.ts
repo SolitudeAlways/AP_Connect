@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: 'config.env' });
+console.log('POSTGRES_PASSWORD:', JSON.stringify(process.env.POSTGRES_PASSWORD));
 
 @Module({
   imports: [
