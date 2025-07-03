@@ -18,7 +18,7 @@ export class UserController {
   // Авторизация пользователя
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto): Promise<User> {
-    const user = await this.userService.findByLogin(loginUserDto.login);
+    const user = await this.userService.findByEmail(loginUserDto.email);
     if (!user) {
       throw new UnauthorizedException('Пользователь не найден');
     }
