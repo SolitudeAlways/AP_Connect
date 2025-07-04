@@ -1,4 +1,12 @@
 <template>
+  <div class="switch-buttons">
+  <button :class="{ active: $route.path === '/login' }" @click="router.push('/login')" type="button">
+    Вход
+  </button>
+  <button :class="{ active: $route.path === '/register' }" @click="router.push('/register')" type="button">
+    Регистрация
+  </button>
+</div>
   <div class="form-box">
     <form class="form" @submit.prevent="register">
       <h2>Регистрация</h2>
@@ -33,6 +41,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
 const emit = defineEmits<{
   (e: 'switch', form: 'login' | 'register'): void
@@ -47,6 +56,7 @@ const form = ref({
 })
 const error = ref('')
 const loading = ref(false)
+const router = useRouter()
 
 const register = async () => {
   error.value = ''
@@ -74,6 +84,28 @@ const register = async () => {
 </script>
 
 <style scoped>
+.switch-buttons {
+  margin-top: 12vh;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.switch-buttons button {
+  padding: 20px 50px;
+  border: none;
+  border-radius: 15px;
+  background: #e0e7ff;
+  color: #22223b;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s, color 0.2s;
+}
+.switch-buttons button.active {
+  background: #2b6cc4;
+  color: #fff;
+}
 .form-box {
   width: 620px;
   background: #fff;
@@ -92,14 +124,16 @@ const register = async () => {
   gap: 22px;
 }
 h2 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: left;
   margin-bottom: 12px;
-  color: #22223b;
+  color: #000000;
   font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: -1px;
 }
 .form-group {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: black;
   display: flex;
   flex-direction: column;

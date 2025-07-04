@@ -1,8 +1,17 @@
 <template>
+  <div class="switch-buttons">
+  <button :class="{ active: $route.path === '/login' }"@click="router.push('/login')"type="button">
+    Вход
+  </button>
+  <button :class="{ active: $route.path === '/register' }" @click="router.push('/register')" type="button">
+    Регистрация
+  </button>
+</div>
   <div class="form-box">
     <form class="form" @submit.prevent="login">
       <h2>Вход</h2>
       <div v-if="error" class="alert-error">{{ error }}</div>
+      <div v-if="success" class="alert-success">{{ success }}</div>
       <div class="form-group">
         <label >E-mail</label>
         <input v-model="form.email" type="email" placeholder="Почта" required />
@@ -19,6 +28,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
 const emit = defineEmits<{
   (e: 'switch', form: 'login' | 'register'): void
@@ -29,20 +39,25 @@ const form = ref({
   password: ''
 })
 const error = ref('')
+const success = ref('')
 const loading = ref(false)
+
+const router = useRouter()
 
 const login = async () => {
   error.value = ''
+  success.value = ''
   loading.value = true
   try {
-    await axios.post('http://localhost:3000/users/login', {
-      email: form.value.email, // Используем email как login
+    const response = await axios.post('http://localhost:3000/users/login', {
+      email: form.value.email,
       password: form.value.password
     })
-    error.value = ''
+    success.value = 'Успешный вход'
     form.value = { email: '', password: '' }
-    // Здесь можно добавить переход или сохранение токена
+    router.push('/dashboard')
   } catch (e: any) {
+    console.log('Отправляем данные:', form.value.email, form.value.password)
     error.value = e.response?.data?.message || 'Ошибка входа'
   } finally {
     loading.value = false
@@ -51,6 +66,28 @@ const login = async () => {
 </script>
 
 <style scoped>
+.switch-buttons {
+  margin-top: 12vh;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.switch-buttons button {
+  padding: 20px 50px;
+  border: none;
+  border-radius: 15px;
+  background: #e0e7ff;
+  color: #22223b;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s, color 0.2s;
+}
+.switch-buttons button.active {
+  background: #2b6cc4;
+  color: #fff;
+}
 .form-box {
   width: 420px;
   background: #fff;
@@ -69,14 +106,16 @@ const login = async () => {
   gap: 22px;
 }
 h2 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: left;
   margin-bottom: 12px;
-  color: #22223b;
+  color: #000000;
   font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: -1px;
 }
 .form-group {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: black;
   display: flex;
   flex-direction: column;
@@ -122,6 +161,16 @@ input:focus {
   background: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  font-size: 16px;
+  text-align: left;
+}
+.alert-success {
+  background: #dcfce7; 
+  color: #166534;      
+  border: 1px solid #86efac;
   border-radius: 8px;
   padding: 12px 14px;
   margin-bottom: 4px;
