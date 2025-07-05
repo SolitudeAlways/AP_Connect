@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ChatService } from './chat.service';
 
 interface ChatMessage {
   message: string;
@@ -17,15 +18,17 @@ interface ChatMessage {
 
 @WebSocketGateway({
   cors: {
-    origin: "http://localhost:5173",
-    credentials: true
+    origin: "http://localhost:5173", // Подключение только с фронта
+    credentials: true // разрешаем передачу токенов
   }
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer()
-  server: Server;
+  constructor(private readonly chatService: ChatService) {}
 
-  private connectedUsers = new Map<string, string>();
+  @WebSocketServer()
+  server: Server; // управление всеми соединениями
+
+  private connectedUsers = new Map<string, string>(); // id клиента и имя пользователя
 
   handleConnection(client: Socket) {
     console.log(`Клиент подключился: ${client.id}`);
@@ -56,20 +59,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('sendMessage')
-  handleMessage(
-    @MessageBody() data: { message: string; username: string },
+  async handleMessage(
+    @MessageBody() data: { message: string; username: string; userId?: number },
     @ConnectedSocket() client: Socket
+    
   ) {
-    const { message, username } = data;
+    console.log('handleMessage вызван', data);
+    const { message, username, userId } = data;
+    
+    // Сохраняем сообщение в базу данных
+    const savedMessage = await this.chatService.createMessage({
+      content: message,
+      username,
+      userId: userId || undefined // Если userId не передан, передаем undefined
+    });
     
     const chatMessage: ChatMessage = {
       message,
       username,
       timestamp: new Date()
     };
-    
+    this.connectedUsers.set(client.id, username);
     this.server.emit('newMessage', chatMessage);
     console.log(`Новое сообщение от ${username}: ${message}`);
+  }
+
+  @SubscribeMessage('getHistory')
+  async handleGetHistory(@ConnectedSocket() client: Socket) {
+    try {
+      const messages = await this.chatService.getRecentMessages(50);
+      client.emit('chatHistory', messages);
+      console.log(`Отправлена история чата клиенту ${client.id}`);
+    } catch (error) {
+      console.error('Ошибка при получении истории чата:', error);
+      client.emit('error', 'Не удалось загрузить историю чата');
+    }
   }
 
   @SubscribeMessage('typing')

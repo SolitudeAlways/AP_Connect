@@ -53,6 +53,9 @@ const login = async () => {
       email: form.value.email,
       password: form.value.password
     })
+    localStorage.setItem('token', response.data.access_token)
+    localStorage.setItem('username', response.data.username) 
+    localStorage.setItem('userId', response.data.userId)
     success.value = 'Успешный вход'
     form.value = { email: '', password: '' }
     router.push('/dashboard')

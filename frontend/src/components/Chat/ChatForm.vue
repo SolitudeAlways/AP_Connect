@@ -7,7 +7,7 @@
       </div>
     </div>
     
-    <div class="messages-list">
+    <div class="messages-list" ref="messagesList">
       <div v-for="(msg, idx) in messages" :key="idx" class="message">
         <div class="message-header">
           <span class="username">{{ msg.username }}</span>
@@ -31,52 +31,101 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { io, Socket } from 'socket.io-client'
+import { useRouter } from 'vue-router'
 
 interface ChatMessage {
   message: string
   username: string
-  timestamp: Date
+  timestamp: string | Date
 }
 
+const router = useRouter()
 const message = ref('')
 const messages = ref<ChatMessage[]>([])
 const connectedUsers = ref<string[]>([])
 const socket = ref<Socket | null>(null)
+const messagesList = ref<HTMLElement>()
 
-// Получаем имя пользователя из localStorage или используем случайное
-const username = ref(localStorage.getItem('username') || `User${Math.floor(Math.random() * 1000)}`)
+// Получаем данные пользователя из localStorage
+const username = ref(localStorage.getItem('username'))
+const userId = ref(localStorage.getItem('userId'))
+
+// Проверяем, залогинен ли пользователь
+if (!username.value || !userId.value) {
+  console.warn('Пользователь не залогинен, перенаправляем на страницу входа')
+  router.push('/login')
+}
 
 function sendMessage() {
-  if (message.value.trim() && socket.value) {
+  if (message.value.trim() && socket.value && username.value && userId.value) {
     socket.value.emit('sendMessage', {
-      message: message.value,
-      username: username.value
+      message: message.value.trim(),
+      username: username.value.trim(),
+      userId: userId.value
     })
     message.value = ''
   }
 }
 
-function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString('ru-RU', {
+function formatTime(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return dateObj.toLocaleTimeString('ru-RU', {
     hour: '2-digit',
     minute: '2-digit'
   })
 }
 
+function scrollToBottom() {
+  nextTick(() => {
+    if (messagesList.value) {
+      messagesList.value.scrollTop = messagesList.value.scrollHeight
+    }
+  })
+}
+
 onMounted(() => {
+  // Проверяем еще раз перед подключением
+  if (!username.value || !userId.value) {
+    console.error('Нет данных пользователя для подключения к чату')
+    return
+  }
+
+  console.log('Подключение к чату:', { username: username.value, userId: userId.value })
+
   // Подключаемся к серверу
   socket.value = io('http://localhost:3000', {
     withCredentials: true
   })
 
+  // Обработка ошибок соединения
+  socket.value.on('connect_error', (err) => {
+    console.error('Ошибка подключения к серверу:', err)
+  })
+
+  socket.value.on('connect', () => {
+    console.log('Успешно подключились к серверу')
+  })
+
+  socket.value.on('disconnect', () => {
+    console.log('Отключились от сервера')
+  })
+
   // Присоединяемся к чату
-  socket.value.emit('joinChat', { username: username.value })
+  socket.value.emit('joinChat', { 
+    username: username.value,
+    userId: userId.value 
+  })
 
   // Слушаем новые сообщения
   socket.value.on('newMessage', (msg: ChatMessage) => {
+    // Преобразуем timestamp в Date если это строка
+    if (typeof msg.timestamp === 'string') {
+      msg.timestamp = new Date(msg.timestamp)
+    }
     messages.value.push(msg)
+    scrollToBottom()
   })
 
   // Слушаем список пользователей
@@ -103,6 +152,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+h3 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
 .chat-form {
   display: flex;
   flex-direction: column;
@@ -130,8 +184,11 @@ onUnmounted(() => {
 }
 
 .users-online {
+  letter-spacing: -0.4px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 0.9rem;
   color: #666;
+  font-weight: 600;
 }
 
 .messages-list {
@@ -157,17 +214,22 @@ onUnmounted(() => {
 }
 
 .username {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-weight: 600;
   color: #2b6cc4;
   font-size: 0.9rem;
 }
 
 .timestamp {
+  font-weight: 500;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 0.8rem;
   color: #666;
 }
 
 .message-text {
+  font-weight: 500;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
   line-height: 1.4;
 }
@@ -209,13 +271,13 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 
-.send_button:hover {
+/* .send_button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px #3b3bff33;
-}
+} */
 
 .send_button:active {
-  transform: translateY(0);
+  transform: translateY(5px);
 }
 
 ::placeholder {

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { ChatModule } from './chat/chat.module';
 import * as dotenv from 'dotenv';
+import { AuthModule } from './auth/AuthModule';
 
 dotenv.config({ path: 'config.env' });
 console.log('POSTGRES_PASSWORD:', JSON.stringify(process.env.POSTGRES_PASSWORD));
@@ -21,6 +22,7 @@ console.log('POSTGRES_PASSWORD:', JSON.stringify(process.env.POSTGRES_PASSWORD))
       autoLoadEntities: true,
     }),
     UserModule,
+    AuthModule,
     ChatModule,
   ],
 })

@@ -10,6 +10,7 @@
   <div class="form-box">
     <form class="form" @submit.prevent="register">
       <h2>Регистрация</h2>
+      <div v-if="success" class="alert-success">{{ success }}</div>
       <div class="form-group">
         <label>Логин</label>
         <input v-model="form.name" type="text" placeholder="Логин" required />
@@ -34,6 +35,7 @@
       </div>
       <div v-if="error" class="alert-error">{{ error }}</div>
       <button class="submit-btn" type="submit" :disabled="!form.accept || loading">Продолжить</button>
+
     </form>
   </div>
 </template>
@@ -54,12 +56,14 @@ const form = ref({
   confirm: '',
   accept: false
 })
+const success = ref('')
 const error = ref('')
 const loading = ref(false)
 const router = useRouter()
 
 const register = async () => {
   error.value = ''
+  success.value = ''
   if (form.value.password !== form.value.confirm) {
     error.value = 'Пароли не совпадают'
     return
@@ -72,9 +76,12 @@ const register = async () => {
       password: form.value.password
     })
     error.value = ''
+    success.value = 'Регистрация прошла успешно! Сейчас вы будете перенаправлены на страницу входа.'
     form.value = { name: '', email: '', password: '', confirm: '', accept: false }
-    alert('Регистрация успешна! Теперь войдите в аккаунт.')
-    emit('switch', 'login')
+    // Автоматический переход на страницу входа через 3 секунды
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
   } catch (e: any) {
     error.value = e.response?.data?.message || 'Ошибка регистрации'
   } finally {
@@ -84,6 +91,16 @@ const register = async () => {
 </script>
 
 <style scoped>
+.alert-success {
+  background: #dcfce7; 
+  color: #166534;      
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  font-size: 16px;
+  text-align: left;
+}
 .switch-buttons {
   margin-top: 12vh;
   display: flex;
@@ -206,6 +223,7 @@ input[type="checkbox"] {
   font-size: 16px;
   text-align: left;
 }
+
 input {
   color: black;
 }
